@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Batrachka</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Batrachka">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="preload" as="image" href="logo.png" fetchpriority="high">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      overscroll-behavior-y: contain;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    :root {
+      --bg: #000;
+      --surface: #1a1a1a;
+      --text: #fff;
+      --text-secondary: #999;
+      --border: #333;
+      --green: #25b47e;
+      --danger: #e04e4e;
+      --btn-bg: #333;
+      --input-bg: transparent;
+      --card-bg: #1e1e1e;
+      --shadow: rgba(0, 0, 0, 0.8);
+    }
+
+    body.admin-mode {
+      --bg: #fff;
+      --surface: #f5f5f5;
+      --text: #111;
+      --text-secondary: #666;
+      --border: #e0e0e0;
+      --btn-bg: #e0e0e0;
+      --input-bg: #fff;
+      --card-bg: #f9f9f9;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body.theme-system {
+        --bg: #121212;
+        --surface: #1e1e1e;
+        --text: #e0e0e0;
+        --border: #444;
+        --btn-bg: #333;
+        --input-bg: #1a1a1a;
+        --card-bg: #252525;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body.admin-mode {
+      background: var(--bg);
+      align-items: flex-start;
+    }
+
+    body.user-mode {
+      background: #000;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .svg-icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      fill: currentColor;
+      vertical-align: -0.125em;
+    }
+
+    .ptr-indicator,
+    .photo-toast,
+    .sync-indicator {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .ptr-indicator.show,
+    .photo-toast.show,
+    .sync-indicator.show {
+      opacity: 1;
+    }
+
+    .photo-toast {
+      background: var(--green);
+    }
+
+    .sync-indicator {
+      background: #ff9800;
+    }
+
+    .context-menu {
+      position: fixed;
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      z-index: 4000;
+      min-width: 180px;
+      overflow: hidden;
+      animation: contextIn 0.15s ease;
+      border: 1px solid var(--border);
+    }
+
+    @keyframes contextIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .context-menu-item {
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .context-menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .context-menu-item.danger {
+      color: var(--danger);
+    }
+
+    .edit-dialog-overlay,
+    .custom-dialog-overlay,
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .edit-dialog,
+    .custom-dialog {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px 20px 20px;
+      max-width: 340px;
+      width: 100%;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      color: var(--text);
+    }
+
+    .edit-dialog h3 {
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .edit-dialog label {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      color: var(--text-secondary);
+    }
+
+    .edit-dialog input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      outline: none;
+      background: var(--input-bg);
+      color: var(--text);
+    }
+
+    .edit-dialog-buttons,
+    .custom-dialog-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .edit-dialog-buttons button,
+    .custom-dialog-buttons button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .btn-cancel,
+    .dialog-btn-no {
+      background: var(--btn-bg);
+      color: var(--text);
+    }
+
+    .dialog-btn-yes {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .framed-btn {
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      touch-action: manipulation;
+    }
+
+    .login-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .password-box {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border-radius: 3rem;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 20px 40px var(--shadow);
+    }
+
+    .password-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 1.1rem;
+      color: var(--text);
+      padding: 0.8rem 1.5rem;
+      caret-color: var(--text);
+    }
+
+    .password-box input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .login-btn {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      background: var(--btn-bg);
+      border: none;
+      cursor: pointer;
+      margin: 0.4rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .feedback {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      text-align: center;
+      min-height: 1.5rem;
+    }
+
+    .admin-container {
+      background: var(--bg);
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 15px 12px;
+      color: var(--text);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+
+    .admin-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .admin-container h1 {
+      font-weight: 800;
+      font-size: 3rem;
+      text-transform: uppercase;
+      margin: 0;
+      letter-spacing: 4px;
+      color: var(--text);
+    }
+
+    .admin-stats {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .admin-stat {
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      cursor: default;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .dot.green {
+      background: var(--green);
+    }
+
+    .admin-list-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-row-wrapper {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 6px;
+      min-height: 44px;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .admin-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .admin-name {
+      font-size: 0.95rem;
+      flex: 1;
+      word-break: break-word;
+      pointer-events: none;
+    }
+
+    .admin-time {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .admin-circle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #bdbdbd;
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    .admin-circle.green {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .kick-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .photo-panel {
+      background: var(--card-bg);
+      padding: 0 10px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s, padding 0.2s;
+    }
+
+    .photo-panel.open {
+      max-height: 400px;
+      padding: 10px;
+    }
+
+    .photo-preview-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .photo-preview {
+      width: 100%;
+      border-radius: 0;
+      cursor: pointer;
+      display: block;
+      border: 1px solid var(--border);
+      max-height: 300px;
+      object-fit: contain;
+      background: transparent;
+    }
+
+    .photo-empty {
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 10px 0;
+      font-size: 0.9rem;
+    }
+
+    .photo-timestamp {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: transparent;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 0;
+      font-size: 0.65rem;
+      font-weight: 500;
+      pointer-events: none;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    .photo-delete-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: #fff;
+      border: 2px solid #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      z-index: 2;
+    }
+
+    .modal-overlay {
+      z-index: 6000;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 90vw;
+      max-height: 85vh;
+      text-align: center;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .modal-content img {
+      max-width: 100%;
+      max-height: 60vh;
+      border-radius: 20px;
+      object-fit: contain;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      line-height: 1;
+    }
+
+    .modal-info {
+      margin-top: 10px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .user-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      height: 100%;
+      padding: 20px 16px;
+      gap: 15px;
+      overflow-y: auto;
+    }
+
+    .user-name {
+      color: #fff;
+      font-size: 1.8rem;
+      text-align: center;
+      font-weight: 700;
+      word-break: break-word;
+      margin-top: 20px;
+    }
+
+    .user-logo {
+      width: min(150px, 30vw);
+      height: min(150px, 30vw);
+      flex-shrink: 0;
+    }
+
+    .user-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .user-status-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 24px;
+      border-radius: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-status-label {
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .user-status-circle {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #555;
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+
+    .user-status-circle.green {
+      background: var(--green);
+      border-color: var(--green);
+      box-shadow: 0 0 12px rgba(37, 180, 126, 0.5);
+    }
+
+    .user-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .user-btn {
+      width: 100%;
+      height: 80px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.3rem;
+      color: #fff;
+    }
+
+    .user-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-green {
+      background: var(--green);
+    }
+
+    .camera-btn {
+      flex: 1;
+      height: 50px;
+      border-radius: 30px;
+      border: 2px dashed var(--green);
+      background: rgba(37, 180, 126, 0.1);
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--green);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .camera-btn.hidden {
+      display: none;
+    }
+
+    .preview-photo-wrapper {
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .preview-photo-wrapper.visible {
+      display: block;
+    }
+
+    .photo-gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .photo-thumb {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-thumb .photo-delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: var(--danger);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      line-height: 1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 2;
+    }
+
+    .photo-thumb .photo-timestamp {
+      position: absolute;
+      left: 50%;
+      bottom: 4px;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.5rem;
+      white-space: nowrap;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      z-index: 1;
+    }
+
+    .preview-photo-card {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .preview-photo {
+      width: 100%;
+      max-height: 40vh;
+      object-fit: contain;
+      background: transparent;
+      border-radius: 0;
+    }
+
+    .user-photo-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .user-photo-timestamp {
+      color: #fff;
+      font-size: 0.7rem;
+      background: transparent;
+      padding: 4px 10px;
+      border-radius: 0;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    .user-delete-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: #fff;
+      border: 2px solid #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-empty {
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 10px 0;
+      font-size: 0.9rem;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.min.js"></script>
+</head>
+
+<body id="mainBody">
+  <div id="app"></div>
+  <div class="ptr-indicator" id="ptrIndicator">⟳ Обновление...</div>
+  <div class="photo-toast" id="photoToast"></div>
+  <div class="sync-indicator" id="syncIndicator">Синхронизация...</div>
+  <script>
+    // ==================== SVG ICONS ====================
+    const svgIcons = {
+      arrowRight: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>',
+      chevronDown: '<svg class="svg-icon icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
+      close: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+      refresh: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 0 1-15.36 6.36L3 16"/></svg>',
+      plus: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+      sort: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6M3 12h4M3 17h2M14 7h7M14 12h7M14 17h7"/></svg>',
+      camera: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="16" rx="3"/><circle cx="12" cy="13" r="3"/><path d="M8 5h8l2-3H6z"/></svg>',
+      trash: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+      edit: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7 21H3v-4Z"/></svg>',
+      theme: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+      logout: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
+      photo: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
+    };
+
+    // ==================== SUPABASE ====================
+    const SUPABASE_URL = 'https://umjwmuyhplybxgoktyfu.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtandtdXlocGx5Ynhnb2t0eWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjQ5NTQsImV4cCI6MjA5ODc0MDk1NH0.GeGgbEjYtGviwXlP15x4EuP5-DudQIYPRTD11i5IriA';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 10 } } });
+
+    const ADMIN_PASSWORD = 'admin';
+    const RESET_HOURS = 12;
+
+    let USERS = [];
+    let appDiv = document.getElementById('app');
+    let body = document.getElementById('mainBody');
+    let adminChannel = null, userChannel = null, syncInterval = null, isSyncing = false;
+    let contextMenu = null, editDialog = null, longPressTimer = null;
+
+    const audioCache = {};
+    function getAudio(src) { if (!audioCache[src]) { const a = new Audio(src); a.preload = 'none'; audioCache[src] = a; } return audioCache[src]; }
+    function playSound(el) { if (el) { el.currentTime = 0; el.play().catch(() => { }); } }
+
+    function formatTime(ts) { if (!ts) return ''; const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+    function formatPhotoTimestamp(iso) { if (!iso) return ''; const d = new Date(iso); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+    function vibrate(ms = 20) { if (navigator.vibrate) navigator.vibrate(ms); }
+    function getOrCreateDeviceId() { let id = localStorage.getItem('deviceId'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now(); localStorage.setItem('deviceId', id); } return id; }
+    function showSyncStatus(v) { document.getElementById('syncIndicator')?.classList.toggle('show', v); }
+    function showToast(msg) { const el = document.getElementById('photoToast'); el.textContent = msg; el.className = 'photo-toast show'; setTimeout(() => el.classList.remove('show'), 2000); }
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    function escapeJsString(value) {
+      return String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n');
+    }
+
+    async function loadUsersFromDB() {
+      const { data, error } = await supabaseClient.from('users').select('id, name').order('name', { ascending: true });
+      if (error) { console.error(error); USERS = []; return []; }
+      USERS = data.map(u => ({ id: u.id, name: u.name }));
+      return USERS;
+    }
+
+    async function findUserByPassword(password) {
+      const { data, error } = await supabaseClient.rpc('find_user_by_password', { p_password: password });
+      if (error || !data || data.length === 0) return null;
+      return data[0];
+    }
+
+    async function addUserRPC(name, password) { const { error } = await supabaseClient.rpc('add_user', { p_name: name, p_password: password }); if (error) throw error; }
+    async function updateUserRPC(id, name, password) { const { error } = await supabaseClient.rpc('update_user', { p_id: id, p_name: name, p_password: password || null }); if (error) throw error; }
+    async function deleteUserRPC(id) { const { error } = await supabaseClient.rpc('delete_user', { p_id: id }); if (error) throw error; }
+
+    async function autoResetExpiredStatuses() {
+      const { data } = await supabaseClient.from('user_statuses').select('user_id, updated_at').eq('status', 'green');
+      if (!data) return;
+      const now = Date.now();
+      for (const r of data) {
+        if (r.updated_at && (now - new Date(r.updated_at).getTime() >= RESET_HOURS * 3600000)) {
+          await supabaseClient.from('user_statuses').update({ status: null, updated_at: new Date().toISOString() }).eq('user_id', r.user_id);
+        }
+      }
+    }
+
+    async function autoDeleteExpiredPhotos() {
+      const { data } = await supabaseClient.from('user_statuses').select('user_id, photo_url, photo_updated_at').not('photo_url', 'is', null);
+      if (!data) return;
+      const now = Date.now();
+      for (const r of data) {
+        if (r.photo_updated_at && (now - new Date(r.photo_updated_at).getTime() >= RESET_HOURS * 3600000)) {
+          // Удаляем все фото из JSON-галереи (или одиночный URL — старый формат)
+          try {
+            const gallery = JSON.parse(r.photo_url);
+            if (Array.isArray(gallery)) {
+              for (const g of gallery) {
+                if (g.fileName) await supabaseClient.storage.from('photos').remove([g.fileName]).catch(() => { });
+              }
+            } else {
+              const fileName = r.photo_url.split('/').pop();
+              if (fileName) await supabaseClient.storage.from('photos').remove([fileName]).catch(() => { });
+            }
+          } catch (e) {
+            const fileName = r.photo_url.split('/').pop();
+            if (fileName) await supabaseClient.storage.from('photos').remove([fileName]).catch(() => { });
+          }
+          await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', r.user_id);
+          // Очищаем localStorage
+          saveUserGallery(r.user_id, []);
+        }
+      }
+    }
+
+    async function loadAllStatuses() {
+      await autoResetExpiredStatuses();
+      await autoDeleteExpiredPhotos();
+      const { data } = await supabaseClient.from('user_statuses').select('user_id,status,updated_at,photo_url,photo_updated_at,photo_timestamp');
+      const map = {};
+      (data || []).forEach(r => { map[r.user_id] = r; });
+      return map;
+    }
+
+    async function loadUserStatus(userId) {
+      await checkAndResetUserStatus(userId);
+      const { data } = await supabaseClient.from('user_statuses').select('status,updated_at,photo_url,photo_timestamp').eq('user_id', userId).maybeSingle();
+      if (!data) return {};
+      // Проверка истечения фото
+      if (data.photo_url && data.photo_updated_at && Date.now() - new Date(data.photo_updated_at).getTime() >= RESET_HOURS * 3600000) {
+        // Пытаемся распарсить галерею, удаляем файлы
+        try {
+          const gallery = JSON.parse(data.photo_url);
+          if (Array.isArray(gallery)) {
+            for (const g of gallery) {
+              if (g.fileName) await supabaseClient.storage.from('photos').remove([g.fileName]).catch(() => { });
+            }
+          }
+        } catch (e) {
+          const fileName = data.photo_url.split('/').pop();
+          if (fileName) await supabaseClient.storage.from('photos').remove([fileName]).catch(() => { });
+        }
+        await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+        saveUserGallery(userId, []);
+        return { status: data.status, updated_at: data.updated_at };
+      }
+      // Восстанавливаем галерею из БД, если localStorage пуст
+      if (data.photo_url) {
+        const localGallery = getUserGallery(userId);
+        if (!localGallery.length) {
+          try {
+            const parsed = JSON.parse(data.photo_url);
+            if (Array.isArray(parsed)) {
+              const restored = parsed.map(g => ({ ...g, isLocal: false }));
+              saveUserGallery(userId, restored);
+            }
+          } catch (e) {
+            // Старый формат — одиночный URL
+            const gallery = [{
+              id: data.photo_url,
+              url: data.photo_url,
+              fileName: data.photo_url.split('/').pop(),
+              uploadedAt: data.photo_updated_at || new Date().toISOString(),
+              timestamp: data.photo_timestamp || null,
+              isLocal: false
+            }];
+            saveUserGallery(userId, gallery);
+          }
+        }
+      }
+      return data || {};
+    }
+
+    async function checkAndResetUserStatus(userId) {
+      const { data } = await supabaseClient.from('user_statuses').select('status, updated_at').eq('user_id', userId).eq('status', 'green').maybeSingle();
+      if (data?.updated_at && Date.now() - new Date(data.updated_at).getTime() >= RESET_HOURS * 3600000) {
+        await supabaseClient.from('user_statuses').update({ status: null, updated_at: new Date().toISOString() }).eq('user_id', userId);
+        return true;
+      }
+      return false;
+    }
+
+    async function saveUserStatus(userId, color) {
+      await supabaseClient.from('user_statuses').upsert({ user_id: userId, status: color, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    }
+
+    async function resetUserStatus(userId) {
+      await supabaseClient.from('user_statuses').update({ status: null, updated_at: new Date().toISOString() }).eq('user_id', userId);
+    }
+
+    async function getDeviceIdForUser(userId) {
+      const { data } = await supabaseClient.from('user_statuses').select('device_id').eq('user_id', userId).maybeSingle();
+      return data?.device_id || null;
+    }
+
+    async function setDeviceIdForUser(userId, devId) {
+      await supabaseClient.from('user_statuses').upsert({ user_id: userId, device_id: devId, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    }
+
+    async function clearDeviceIdForUser(userId) {
+      await supabaseClient.from('user_statuses').update({ device_id: null }).eq('user_id', userId);
+    }
+
+    async function tryLoginWithDevice(userId, devId) {
+      const cur = await getDeviceIdForUser(userId);
+      if (cur && cur !== devId) return { success: false, message: 'Аккаунт уже используется на другом устройстве.' };
+      await setDeviceIdForUser(userId, devId);
+      return { success: true };
+    }
+
+    async function extractExifDate(file) {
+      return new Promise((resolve) => {
+        try { EXIF.getData(file, function () { const dt = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTimeDigitized') || EXIF.getTag(this, 'DateTime'); if (dt) { const parts = dt.split(' '); if (parts.length === 2) { const d = new Date(parts[0].replace(/:/g, '-') + 'T' + parts[1]); if (!isNaN(d.getTime())) { resolve(d.toISOString()); return; } } } resolve(null); }); } catch (e) { resolve(null); }
+      });
+    }
+
+    async function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => { const img = new Image(); img.onload = () => { let w = img.width, h = img.height; if (w > 800) { h = Math.round((h * 800) / w); w = 800; } const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h); canvas.toBlob(b => b ? resolve(b) : reject(new Error('fail')), 'image/jpeg', 0.85); }; img.src = e.target.result; };
+        reader.onerror = reject; reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadPhoto(userId, file) {
+      let uploadFile = file;
+      try { uploadFile = await compressImage(file); } catch (e) { }
+      const exifDate = await extractExifDate(file);
+      const photoTimestamp = exifDate || new Date().toISOString();
+      const fileName = `user_${userId}_${Date.now()}.jpg`;
+      const { error } = await supabaseClient.storage.from('photos').upload(fileName, uploadFile, { upsert: true });
+      if (error) throw new Error(`Storage error: ${error.message}`);
+      const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
+      return { photoUrl, fileName, photoTimestamp };
+    }
+
+    function getUserGalleryKey(userId) {
+      return `userGallery:${userId}`;
+    }
+
+    function getUserGallery(userId) {
+      try {
+        const raw = localStorage.getItem(getUserGalleryKey(userId));
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveUserGallery(userId, gallery) {
+      const safe = Array.isArray(gallery) ? gallery.slice(0, 6) : [];
+      localStorage.setItem(getUserGalleryKey(userId), JSON.stringify(safe));
+      return safe;
+    }
+
+    async function syncGalleryToStatus(userId, gallery) {
+      // Сохраняем всю галерею как JSON в БД, чтобы админ видел все фото с любого устройства
+      if (gallery.length > 0) {
+        const galleryData = gallery.map(g => ({
+          url: g.url,
+          fileName: g.fileName,
+          uploadedAt: g.uploadedAt,
+          timestamp: g.timestamp || null
+        }));
+        const latest = galleryData[0]; // галерея уже отсортирована (новые в начале)
+        await supabaseClient.from('user_statuses').upsert({
+          user_id: userId,
+          photo_url: JSON.stringify(galleryData),
+          photo_updated_at: latest.uploadedAt,
+          photo_timestamp: latest.timestamp || latest.uploadedAt
+        }, { onConflict: 'user_id' });
+      } else {
+        await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+      }
+    }
+
+    async function deletePhoto(userId, fileName) {
+      if (!fileName) return;
+      await supabaseClient.storage.from('photos').remove([fileName]);
+      await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+    }
+
+    async function deleteGalleryPhoto(userId, index) {
+      const gallery = getUserGallery(userId);
+      const entry = gallery[index];
+      if (!entry) return;
+      if (entry.fileName) {
+        await supabaseClient.storage.from('photos').remove([entry.fileName]).catch(() => { });
+      }
+      gallery.splice(index, 1);
+      const saved = saveUserGallery(userId, gallery);
+      await syncGalleryToStatus(userId, saved);
+      return saved;
+    }
+
+    async function uploadPhotosToGallery(userId, files) {
+      const gallery = getUserGallery(userId);
+      const remaining = 6 - gallery.length;
+      const selected = Array.from(files || []).slice(0, remaining);
+      if ((files || []).length > remaining) {
+        showToast(`Можно загрузить не более ${remaining} фото`);
+      }
+      if (selected.length === 0) return gallery;
+      const tempEntries = selected.map((file, idx) => ({
+        id: `temp_${Date.now()}_${idx}`,
+        url: URL.createObjectURL(file),
+        fileName: null,
+        uploadedAt: new Date().toISOString(),
+        timestamp: null,
+        isLocal: true
+      }));
+      const merged = [...tempEntries, ...gallery].slice(0, 6);
+      saveUserGallery(userId, merged);
+      for (let i = 0; i < tempEntries.length; i += 1) {
+        const entry = tempEntries[i];
+        const file = selected[i];
+        const { photoUrl, fileName, photoTimestamp } = await uploadPhoto(userId, file);
+        const target = merged.find(item => item.id === entry.id);
+        if (target) {
+          target.url = photoUrl;
+          target.fileName = fileName;
+          target.timestamp = photoTimestamp;
+          target.uploadedAt = new Date().toISOString();
+          target.isLocal = false;
+        }
+        if (entry.url.startsWith('blob:')) URL.revokeObjectURL(entry.url);
+      }
+      const saved = saveUserGallery(userId, merged);
+      await syncGalleryToStatus(userId, saved);
+      return saved;
+    }
+
+    async function fullKickUser(userId) {
+      // Удаляем все фото из хранилища и БД
+      const gallery = getUserGallery(userId);
+      for (const g of gallery) {
+        if (g.fileName) await supabaseClient.storage.from('photos').remove([g.fileName]).catch(() => { });
+      }
+      saveUserGallery(userId, []);
+      await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+      // Сбрасываем статус и отвязываем устройство
+      await resetUserStatus(userId);
+      await clearDeviceIdForUser(userId);
+      getAudio('admin-kick-sound.mp3')?.play().catch(() => { });
+      showToast('Пользователь сброшен');
+    }
+
+    function hideContextMenu() { if (contextMenu) { contextMenu.remove(); contextMenu = null; } }
+    function showContextMenu(user, x, y) {
+      hideContextMenu();
+      contextMenu = document.createElement('div');
+      contextMenu.className = 'context-menu';
+      contextMenu.innerHTML = `<div class="context-menu-item" id="ctxEdit">${svgIcons.edit} Редактировать</div><div class="context-menu-item danger" id="ctxDelete">${svgIcons.trash} Удалить</div>`;
+      contextMenu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+      contextMenu.style.top = Math.min(y, window.innerHeight - 100) + 'px';
+      document.body.appendChild(contextMenu);
+      document.getElementById('ctxEdit').onclick = () => { hideContextMenu(); showEditDialog(user); };
+      document.getElementById('ctxDelete').onclick = () => { hideContextMenu(); deleteUserHandler(user); };
+      setTimeout(() => { document.addEventListener('click', function closeMenu(e) { if (contextMenu && !contextMenu.contains(e.target)) { hideContextMenu(); document.removeEventListener('click', closeMenu); } }); }, 50);
+    }
+
+    function showEditDialog(user) {
+      if (editDialog) editDialog.remove();
+      editDialog = document.createElement('div');
+      editDialog.className = 'edit-dialog-overlay';
+      editDialog.innerHTML = `<div class="edit-dialog"><h3>Редактировать</h3><label>Имя</label><input type="text" id="editName" value="${user.name.replace(/"/g, '&quot;')}"><label>Новый пароль (оставьте пустым, если не меняется)</label><input type="text" id="editPassword" placeholder="Новый пароль"><div class="edit-dialog-buttons"><button class="btn-cancel" id="editCancel">Отмена</button><button class="btn-save" id="editSave">Сохранить</button></div></div>`;
+      document.body.appendChild(editDialog);
+      document.getElementById('editCancel').onclick = () => editDialog.remove();
+      document.getElementById('editSave').onclick = async () => {
+        const name = document.getElementById('editName').value.trim();
+        const pass = document.getElementById('editPassword').value.trim();
+        if (!name) { alert('Имя обязательно'); return; }
+        try { await updateUserRPC(user.id, name, pass || null); editDialog.remove(); await refreshUsersAndRender(); showToast('Пользователь обновлён'); } catch (e) { alert('Ошибка: ' + e.message); }
+      };
+      editDialog.onclick = e => { if (e.target === editDialog) editDialog.remove(); };
+    }
+
+    function showAddUserDialog() {
+      if (editDialog) editDialog.remove();
+      editDialog = document.createElement('div');
+      editDialog.className = 'edit-dialog-overlay';
+      editDialog.innerHTML = `<div class="edit-dialog"><h3>Добавить участника</h3><label>Имя</label><input type="text" id="editName" placeholder="Имя"><label>Пароль</label><input type="text" id="editPassword" placeholder="Пароль"><div class="edit-dialog-buttons"><button class="btn-cancel" id="editCancel">Отмена</button><button class="btn-save" id="editSave">Добавить</button></div></div>`;
+      document.body.appendChild(editDialog);
+      document.getElementById('editCancel').onclick = () => editDialog.remove();
+      document.getElementById('editSave').onclick = async () => {
+        const name = document.getElementById('editName').value.trim();
+        const pass = document.getElementById('editPassword').value.trim();
+        if (!name || !pass) { alert('Заполните поля'); return; }
+        try { await addUserRPC(name, pass); editDialog.remove(); await refreshUsersAndRender(); showToast('Пользователь добавлен'); } catch (e) { alert('Ошибка: ' + e.message); }
+      };
+      editDialog.onclick = e => { if (e.target === editDialog) editDialog.remove(); };
+    }
+
+    async function deleteUserHandler(user) {
+      if (!confirm(`Удалить «${user.name}»?`)) return;
+      await fullKickUser(user.id);
+      await deleteUserRPC(user.id);
+      await refreshUsersAndRender();
+      showToast('Пользователь удалён');
+    }
+
+    function showPhotoModal(url, name, time, ts) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `<div class="modal-content"><img src="${url}" alt="Фото" style="border-radius:20px;"></div>`;
+      document.body.appendChild(overlay);
+      overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    }
+
+    // Удаление фото администратором (устаревший метод, оставлен для совместимости)
+    window.adminDeletePhoto = async function (userId, e) {
+      e.stopPropagation();
+      if (!confirm('Удалить все фото?')) return;
+      const gallery = getUserGallery(userId);
+      for (const g of gallery) {
+        if (g.fileName) await supabaseClient.storage.from('photos').remove([g.fileName]).catch(() => { });
+      }
+      saveUserGallery(userId, []);
+      await syncGalleryToStatus(userId, []);
+      getAudio('photo-delete-sound.mp3')?.play().catch(() => { });
+      await renderAdminList();
+    };
+
+    async function sortUsersAlphabetically() { USERS.sort((a, b) => a.name.localeCompare(b.name, 'ru')); await renderAdminList(); showToast('Список отсортирован'); }
+    async function refreshUsersAndRender() { await loadUsersFromDB(); await renderAdminList(); }
+
+    async function updateAdminRow(userId, newData, oldData) {
+      const wrapper = document.querySelector(`.admin-row-wrapper[data-user-id="${userId}"]`);
+      if (!wrapper) return;
+      // Звук только при появлении зелёного статуса (не при изменении фото)
+      const statusChanged = oldData && oldData.status !== newData.status;
+      const photoChanged = oldData && oldData.photo_url !== newData.photo_url;
+      if (statusChanged && newData.status === 'green' && !photoChanged) {
+        getAudio('admin-update-sound.mp3')?.play().catch(() => { });
+      }
+      const circle = wrapper.querySelector('.admin-circle');
+      const timeEl = wrapper.querySelector('.admin-time');
+      if (circle) circle.className = 'admin-circle' + (newData.status === 'green' ? ' green' : '');
+      if (timeEl) timeEl.textContent = newData.updated_at ? formatTime(newData.updated_at) : '';
+      // Перерисовываем галерею если панель открыта
+      const panel = wrapper.querySelector('.photo-panel');
+      if (panel && panel.classList.contains('open')) {
+        renderAdminPhotoGallery(userId, panel);
+      }
+      const greenCount = document.querySelectorAll('.admin-circle.green').length;
+      const statEl = document.querySelector('.admin-stat .dot.green');
+      if (statEl?.nextSibling) statEl.nextSibling.textContent = ' ' + greenCount;
+    }
+
+    async function renderAdminList() {
+      const listWrapper = document.querySelector('.admin-list-wrapper');
+      if (!listWrapper) return;
+      const map = await loadAllStatuses();
+      const green = Object.values(map).filter(s => s.status === 'green').length;
+      // Синхронизируем галереи из БД в localStorage для всех пользователей
+      for (const user of USERS) {
+        const s = map[user.id];
+        if (s && s.photo_url) {
+          const localGallery = getUserGallery(user.id);
+          if (!localGallery.length) {
+            try {
+              const parsed = JSON.parse(s.photo_url);
+              if (Array.isArray(parsed)) {
+                saveUserGallery(user.id, parsed.map(g => ({ ...g, isLocal: false })));
+              }
+            } catch (e) {
+              // Старый формат — одиночный URL
+              saveUserGallery(user.id, [{
+                id: s.photo_url,
+                url: s.photo_url,
+                fileName: s.photo_url.split('/').pop(),
+                uploadedAt: s.photo_updated_at || new Date().toISOString(),
+                timestamp: s.photo_timestamp || null,
+                isLocal: false
+              }]);
+            }
+          }
+        } else if (s && !s.photo_url) {
+          saveUserGallery(user.id, []);
+        }
+      }
+      listWrapper.innerHTML = USERS.map(user => {
+        const s = map[user.id] || {};
+        const time = s.updated_at ? formatTime(s.updated_at) : '';
+        const cls = 'admin-circle' + (s.status === 'green' ? ' green' : '');
+        const safeName = escapeJsString(user.name);
+        return `<div class="admin-row-wrapper" data-user-id="${user.id}"><div class="admin-row"><div class="admin-info"><span class="admin-name">${safeName}</span><span class="admin-time">${time}</span></div><button class="kick-btn" onclick="event.stopPropagation();fullKickUser(${user.id})">${svgIcons.close}</button><div class="${cls}"></div></div><div class="photo-panel"><div class="photo-gallery-grid" id="photoGalleryGrid_${user.id}"></div></div></div>`;
+      }).join('');
+      const statEl = document.querySelector('.admin-stat .dot.green');
+      if (statEl?.nextSibling) statEl.nextSibling.textContent = ' ' + green;
+      bindAdminEvents();
+    }
+
+    function bindAdminEvents() {
+      document.querySelectorAll('.admin-row').forEach(row => {
+        const userId = parseInt(row.parentElement.dataset.userId);
+        if (isNaN(userId)) return;
+        const user = USERS.find(u => u.id === userId);
+        const wrapper = row.parentElement;
+        const panel = wrapper.querySelector('.photo-panel');
+        
+        row.onclick = function (e) { 
+          if (panel) {
+            panel.classList.toggle('open');
+            // Render admin gallery when panel opens
+            if (panel.classList.contains('open') && !panel.dataset.rendered) {
+              renderAdminPhotoGallery(userId, panel);
+              panel.dataset.rendered = 'true';
+            }
+          }
+        };
+        row.addEventListener('touchstart', function (e) { longPressTimer = setTimeout(() => { vibrate(15); showContextMenu(user, e.touches[0].clientX, e.touches[0].clientY); }, 600); });
+        row.addEventListener('touchend', () => { if (longPressTimer) clearTimeout(longPressTimer); });
+        row.addEventListener('touchmove', () => { if (longPressTimer) clearTimeout(longPressTimer); });
+      });
+    }
+
+    async function renderAdminPhotoGallery(userId, panelEl) {
+      const galleryPhotos = getUserGallery(userId).slice(0, 6);
+      
+      const photoGalleryGrid = panelEl.querySelector('.photo-gallery-grid');
+      if (!photoGalleryGrid) return;
+      
+      if (!galleryPhotos.length) {
+        photoGalleryGrid.innerHTML = '';
+        return;
+      }
+      
+      photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
+        <div class="photo-thumb">
+          <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
+          <button class="photo-delete-btn" data-index="${index}" type="button" onclick="event.stopPropagation();">${svgIcons.close}</button>
+        </div>
+      `).join('');
+      
+      photoGalleryGrid.querySelectorAll('.photo-thumb img').forEach(img => {
+        img.onclick = () => showPhotoModal(img.getAttribute('src'), '', '', '');
+      });
+      
+      photoGalleryGrid.querySelectorAll('.photo-delete-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm('Удалить фото?')) return;
+          const idx = Number(btn.getAttribute('data-index'));
+          await deleteGalleryPhoto(userId, idx);
+          getAudio('photo-delete-sound.mp3')?.play().catch(() => { });
+          showToast('Фото удалено');
+          renderAdminPhotoGallery(userId, panelEl);
+        };
+      });
+    }
+
+    function applyGlobalTheme() {
+      const theme = localStorage.getItem('adminTheme') || 'system';
+      body.classList.remove('theme-system', 'theme-dark', 'theme-light');
+      if (theme === 'dark') body.classList.add('theme-dark');
+      else if (theme === 'light') body.classList.add('theme-light');
+      else if (theme === 'system') body.classList.add('theme-system');
+    }
+    applyGlobalTheme();
+    const THEMES = ['system', 'light', 'dark'];
+
+    function initPullToRefresh() {
+      let pullStartY = 0, pulling = false, pullDistance = 0;
+      
+      document.addEventListener('touchstart', e => {
+        if (!body.classList.contains('admin-mode')) return;
+        if (window.scrollY === 0 && document.querySelector('.admin-list-wrapper').scrollTop === 0) {
+          pullStartY = e.touches[0].clientY;
+          pulling = true;
+          pullDistance = 0;
+        }
+      }, { passive: true });
+      
+      document.addEventListener('touchmove', e => {
+        if (!pulling) return;
+        pullDistance = e.touches[0].clientY - pullStartY;
+        if (pullDistance > 0) {
+          document.getElementById('ptrIndicator').classList.toggle('show', pullDistance > 60);
+        }
+      }, { passive: true });
+      
+      document.addEventListener('touchend', async () => {
+        if (!pulling) return;
+        pulling = false;
+        if (pullDistance > 60) {
+          document.getElementById('ptrIndicator').classList.remove('show');
+          await fullRefreshAdmin();
+        }
+        pullDistance = 0;
+      });
+    }
+
+    async function fullRefreshAdmin() { showSyncStatus(true); await refreshUsersAndRender(); showToast('Данные обновлены'); showSyncStatus(false); }
+
+    async function quickSyncStatuses() {
+      if (isSyncing || !body.classList.contains('admin-mode')) return;
+      isSyncing = true;
+      try {
+        const map = await loadAllStatuses();
+        document.querySelectorAll('.admin-row-wrapper').forEach(w => {
+          const userId = parseInt(w.dataset.userId);
+          if (isNaN(userId)) return;
+          const s = map[userId];
+          if (s) {
+            w.querySelector('.admin-circle').className = 'admin-circle' + (s.status === 'green' ? ' green' : '');
+            w.querySelector('.admin-time').textContent = s.updated_at ? formatTime(s.updated_at) : '';
+            const panel = w.querySelector('.photo-panel');
+            if (panel) {
+              renderAdminPhotoGallery(userId, panel);
+            }
+          }
+        });
+        const cnt = document.querySelectorAll('.admin-circle.green').length;
+        const stat = document.querySelector('.admin-stat .dot.green');
+        if (stat?.nextSibling) stat.nextSibling.textContent = ' ' + cnt;
+        showSyncStatus(false);
+      } catch (e) { showSyncStatus(true); }
+      isSyncing = false;
+    }
+
+    function cleanup() {
+      if (adminChannel) { supabaseClient.removeChannel(adminChannel); adminChannel = null; }
+      if (userChannel) { supabaseClient.removeChannel(userChannel); userChannel = null; }
+      if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+      hideContextMenu(); if (editDialog) { editDialog.remove(); editDialog = null; }
+    }
+
+    // ==================== СТРАНИЦЫ ====================
+    function showLoginPage() {
+      cleanup();
+      body.className = '';
+      applyGlobalTheme();
+      appDiv.innerHTML = `<div class="login-wrapper"><div class="password-box"><input type="password" id="passwordInput" placeholder="Введите пароль" autocomplete="off"><button class="login-btn" id="loginButton">${svgIcons.arrowRight}</button></div><div class="feedback" id="feedbackMessage"></div></div>`;
+      const inp = document.getElementById('passwordInput'), msg = document.getElementById('feedbackMessage');
+      async function handle() {
+        vibrate(10);
+        const pwd = inp.value.trim();
+        if (!pwd) { msg.textContent = 'Введите пароль'; msg.style.color = '#aaa'; return; }
+        if (pwd === ADMIN_PASSWORD) { localStorage.setItem('role', 'admin'); msg.textContent = '✓ Администратор'; msg.style.color = '#4caf50'; setTimeout(showAdminPage, 200); return; }
+        const user = await findUserByPassword(pwd);
+        if (!user) { msg.textContent = '✗ Неверный пароль'; msg.style.color = '#e04e4e'; inp.value = ''; return; }
+        const devId = getOrCreateDeviceId();
+        try {
+          const res = await tryLoginWithDevice(user.id, devId);
+          if (res.success) { localStorage.setItem('role', 'user'); localStorage.setItem('userId', user.id); localStorage.setItem('name', user.name); msg.textContent = '✓ ' + user.name; msg.style.color = '#4caf50'; setTimeout(showUserPage, 200); }
+          else { msg.textContent = res.message; msg.style.color = '#e04e4e'; inp.value = ''; }
+        } catch (e) { msg.textContent = 'Ошибка соединения'; msg.style.color = '#e04e4e'; }
+      }
+      document.getElementById('loginButton').onclick = handle;
+      inp.onkeypress = e => { if (e.key === 'Enter') handle(); };
+      setTimeout(() => inp.focus(), 300);
+    }
+
+    async function showAdminPage() {
+      cleanup();
+      await loadUsersFromDB();
+      body.className = 'admin-mode';
+      applyGlobalTheme();
+      getAudio('admin-enter-sound.mp3')?.play().catch(() => { });
+      const map = await loadAllStatuses();
+      const green = Object.values(map).filter(s => s.status === 'green').length;
+      appDiv.innerHTML = `<div class="admin-container"><div class="admin-header"><div class="admin-header-left"><h1>KEK</h1></div><div style="display:flex;gap:8px;"><button class="framed-btn" id="refreshBtn">${svgIcons.refresh}</button><button class="framed-btn" id="themeBtn">${svgIcons.theme}</button><button class="framed-btn" id="logoutBtn">${svgIcons.logout}</button></div></div><div class="admin-stats"><div class="admin-stat"><span class="dot green"></span> ${green}</div><button class="framed-btn" id="addUserBtn" style="margin-left:auto;">${svgIcons.plus}</button><button class="framed-btn" id="sortBtn">${svgIcons.sort}</button></div><div class="admin-list-wrapper">${USERS.map(user => { const s = map[user.id] || {}; const safeName = escapeJsString(user.name); return `<div class="admin-row-wrapper" data-user-id="${user.id}"><div class="admin-row"><div class="admin-info"><span class="admin-name">${safeName}</span><span class="admin-time">${s.updated_at ? formatTime(s.updated_at) : ''}</span></div><button class="kick-btn" onclick="event.stopPropagation();fullKickUser(${user.id})">${svgIcons.close}</button><div class="admin-circle${s.status === 'green' ? ' green' : ''}"></div></div><div class="photo-panel"><div class="photo-gallery-grid" id="photoGalleryGrid_${user.id}"></div></div></div>`; }).join('')}</div></div>`;
+      document.getElementById('refreshBtn').onclick = fullRefreshAdmin;
+      document.getElementById('themeBtn').onclick = () => { const cur = localStorage.getItem('adminTheme') || 'system'; localStorage.setItem('adminTheme', THEMES[(THEMES.indexOf(cur) + 1) % 3]); applyGlobalTheme(); };
+      document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('role'); showLoginPage(); };
+      document.getElementById('addUserBtn').onclick = showAddUserDialog;
+      document.getElementById('sortBtn').onclick = sortUsersAlphabetically;
+      bindAdminEvents();
+      initPullToRefresh();
+      adminChannel = supabaseClient.channel('admin-updates').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_statuses' }, payload => {
+        if (payload.new && payload.new.user_id) {
+          updateAdminRow(payload.new.user_id, payload.new, payload.old);
+        }
+      }).subscribe();
+      syncInterval = setInterval(async () => { await autoResetExpiredStatuses(); await autoDeleteExpiredPhotos(); quickSyncStatuses(); }, 60000);
+      quickSyncStatuses();
+    }
+
+    async function showUserPage() {
+      cleanup();
+      const userId = parseInt(localStorage.getItem('userId'));
+      const name = localStorage.getItem('name');
+      if (isNaN(userId) || !name) { showLoginPage(); return; }
+      body.className = 'user-mode'; applyGlobalTheme();
+      const data = await loadUserStatus(userId);
+      const isGreen = data.status === 'green';
+      let galleryPhotos = getUserGallery(userId);
+
+      appDiv.innerHTML = `<div class="user-container" id="userContainer">
+        <div style="position: absolute; top: 10px; right: 10px;"><button class="framed-btn" id="logoutBtn">${svgIcons.logout}</button></div>
+        <div class="user-name">${escapeHtml(name)}</div>
+        <div class="user-logo"><img src="logo.png" alt="Логотип" decoding="sync"></div>
+        <div class="user-status-container"><span class="user-status-label">Статус</span><div class="user-status-circle${isGreen ? ' green' : ''}" id="userStatusCircle"></div></div>
+        <div class="user-buttons"><button class="user-btn btn-green" id="greenBtn"${isGreen ? ' disabled style="opacity:0.6"' : ''}>Готов вкалывать!</button></div>
+        <input type="file" id="cameraInput" accept="image/*" multiple style="display:none">
+        <div class="user-photo-section" style="width:100%; max-width:380px;">
+          ${isGreen ? `
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <button class="camera-btn" id="cameraBtn" type="button">Сделать снимок</button>
+              <button class="camera-btn" id="fileBtn" type="button">Загрузить фото</button>
+            </div>
+            <div class="photo-gallery-grid" id="photoGalleryGrid"></div>
+          ` : ``}
+        </div>
+      </div>`;
+
+      const circle = document.getElementById('userStatusCircle'), greenBtn = document.getElementById('greenBtn');
+      let cameraBtn, fileBtn, cameraInput, photoGalleryGrid;
+
+      if (isGreen) {
+        cameraBtn = document.getElementById('cameraBtn');
+        fileBtn = document.getElementById('fileBtn');
+        cameraInput = document.getElementById('cameraInput');
+        photoGalleryGrid = document.getElementById('photoGalleryGrid');
+      }
+
+      function renderPhotoGallery() {
+        if (!photoGalleryGrid) return;
+        if (!galleryPhotos.length) {
+          return;
+        }
+        photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
+          <div class="photo-thumb">
+            <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
+            <button class="photo-delete-btn" data-index="${index}" type="button">${svgIcons.close}</button>
+          </div>
+        `).join('');
+        photoGalleryGrid.querySelectorAll('.photo-thumb img').forEach(img => {
+          img.onclick = () => showPhotoModal(img.getAttribute('src'), name, '', '');
+        });
+        photoGalleryGrid.querySelectorAll('.photo-delete-btn').forEach(btn => {
+          btn.onclick = async (e) => {
+            e.stopPropagation();
+            if (!confirm('Удалить фото?')) return;
+            const idx = Number(btn.getAttribute('data-index'));
+            const updated = await deleteGalleryPhoto(userId, idx);
+            galleryPhotos = updated || getUserGallery(userId);
+            renderPhotoGallery();
+            getAudio('photo-delete-sound.mp3')?.play().catch(() => { });
+            showToast('Фото удалено');
+          };
+        });
+      }
+
+      renderPhotoGallery();
+
+      userChannel = supabaseClient.channel('user-' + userId)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_statuses', filter: 'user_id=eq.' + userId }, payload => {
+          if (payload.new) {
+            if (payload.new.device_id !== undefined && payload.new.device_id !== getOrCreateDeviceId()) { alert('Сессия завершена.'); localStorage.clear(); showLoginPage(); return; }
+            if (payload.new.status !== data.status) { showUserPage(); return; }
+            if (payload.new.photo_url && payload.new.photo_url !== data.photo_url) {
+              galleryPhotos = getUserGallery(userId);
+              renderPhotoGallery();
+            }
+          }
+        }).subscribe();
+
+      if (isGreen) {
+        cameraBtn.onclick = () => {
+          vibrate(10);
+          cameraInput.setAttribute('capture', 'environment');
+          cameraInput.multiple = true;
+          cameraInput.click();
+        };
+        fileBtn.onclick = () => {
+          vibrate(10);
+          cameraInput.removeAttribute('capture');
+          cameraInput.multiple = true;
+          cameraInput.click();
+        };
+        cameraInput.onchange = async e => {
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          e.target.value = '';
+          try {
+            const updated = await uploadPhotosToGallery(userId, files);
+            galleryPhotos = updated || getUserGallery(userId);
+            renderPhotoGallery();
+            showToast('Фото загружено');
+          } catch (err) {
+            alert('Ошибка: ' + err.message);
+          }
+        };
+      }
+
+      document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('role'); localStorage.removeItem('userId'); localStorage.removeItem('name'); showLoginPage(); };
+
+      greenBtn.onclick = async () => {
+        if (isGreen) return;
+        vibrate(30); greenBtn.disabled = true; greenBtn.style.opacity = '0.6';
+        await saveUserStatus(userId, 'green'); getAudio('green-sound.mp3')?.play().catch(() => { });
+        showUserPage();
+      };
+
+      const refreshInterval = setInterval(async () => {
+        const fresh = await loadUserStatus(userId);
+        if (fresh.status !== (circle.classList.contains('green') ? 'green' : null)) {
+          if (fresh.status === 'green') {
+            circle.classList.add('green');
+            greenBtn.disabled = true; greenBtn.style.opacity = '0.6';
+          } else {
+            circle.classList.remove('green');
+            greenBtn.disabled = false; greenBtn.style.opacity = '1';
+          }
+        }
+      }, 60000);
+
+      window.addEventListener('beforeunload', () => clearInterval(refreshInterval));
+      const originalCleanup = cleanup;
+      cleanup = function () { clearInterval(refreshInterval); originalCleanup(); };
+      
+      // Pull-to-refresh для пользователя
+      const userContainer = document.getElementById('userContainer');
+      if (userContainer) {
+        let pullStartY = 0, pulling = false, pullDistance = 0;
+        userContainer.addEventListener('touchstart', e => {
+          if (userContainer.scrollTop === 0) {
+            pullStartY = e.touches[0].clientY;
+            pulling = true;
+            pullDistance = 0;
+          }
+        }, { passive: true });
+        userContainer.addEventListener('touchmove', e => {
+          if (!pulling) return;
+          pullDistance = e.touches[0].clientY - pullStartY;
+          if (pullDistance > 0) {
+            document.getElementById('ptrIndicator').classList.toggle('show', pullDistance > 60);
+          }
+        }, { passive: true });
+        userContainer.addEventListener('touchend', async () => {
+          if (!pulling) return;
+          pulling = false;
+          if (pullDistance > 60) {
+            document.getElementById('ptrIndicator').classList.remove('show');
+            showSyncStatus(true);
+            const fresh = await loadUserStatus(userId);
+            galleryPhotos = getUserGallery(userId);
+            if (fresh.status === 'green' && !isGreen) {
+              showSyncStatus(false);
+              showUserPage();
+            } else {
+              if (galleryPhotos.length) renderPhotoGallery();
+              showSyncStatus(false);
+              showToast('Данные обновлены');
+            }
+          }
+          pullDistance = 0;
+        });
+      }
+    }
+
+    async function initApp() {
+      await loadUsersFromDB();
+      const role = localStorage.getItem('role');
+      if (role === 'admin') showAdminPage();
+      else if (role === 'user' && localStorage.getItem('userId')) showUserPage();
+      else showLoginPage();
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
+    }
+    window.addEventListener('online', () => { showSyncStatus(false); if (body.classList.contains('admin-mode')) quickSyncStatuses(); });
+    window.addEventListener('offline', () => showSyncStatus(true));
+    document.addEventListener('click', e => { if (contextMenu && !contextMenu.contains(e.target)) hideContextMenu(); });
+    initApp();
+  </script>
+</body>
+
+</html>
