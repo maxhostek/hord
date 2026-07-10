@@ -955,7 +955,7 @@
             const fileName = r.photo_url.split('/').pop();
             if (fileName) await supabaseClient.storage.from('photos').remove([fileName]).catch(() => { });
           }
-          await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', r.user_id);
+          await supabaseClient.from('user_statuses').upsert({ user_id: r.user_id, photo_url: null, photo_updated_at: null, photo_timestamp: null }, { onConflict: 'user_id' });
           // Очищаем localStorage
           saveUserGallery(r.user_id, []);
         }
@@ -973,11 +973,10 @@
 
     async function loadUserStatus(userId) {
       await checkAndResetUserStatus(userId);
-      const { data } = await supabaseClient.from('user_statuses').select('status,updated_at,photo_url,photo_timestamp').eq('user_id', userId).maybeSingle();
+      const { data } = await supabaseClient.from('user_statuses').select('status,updated_at,photo_url,photo_updated_at,photo_timestamp').eq('user_id', userId).maybeSingle();
       if (!data) return {};
       // Проверка истечения фото
       if (data.photo_url && data.photo_updated_at && Date.now() - new Date(data.photo_updated_at).getTime() >= RESET_HOURS * 3600000) {
-        // Пытаемся распарсить галерею, удаляем файлы
         try {
           const gallery = JSON.parse(data.photo_url);
           if (Array.isArray(gallery)) {
@@ -989,33 +988,9 @@
           const fileName = data.photo_url.split('/').pop();
           if (fileName) await supabaseClient.storage.from('photos').remove([fileName]).catch(() => { });
         }
-        await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+        await supabaseClient.from('user_statuses').upsert({ user_id: userId, photo_url: null, photo_updated_at: null, photo_timestamp: null }, { onConflict: 'user_id' });
         saveUserGallery(userId, []);
         return { status: data.status, updated_at: data.updated_at };
-      }
-      // Восстанавливаем галерею из БД, если localStorage пуст
-      if (data.photo_url) {
-        const localGallery = getUserGallery(userId);
-        if (!localGallery.length) {
-          try {
-            const parsed = JSON.parse(data.photo_url);
-            if (Array.isArray(parsed)) {
-              const restored = parsed.map(g => ({ ...g, isLocal: false }));
-              saveUserGallery(userId, restored);
-            }
-          } catch (e) {
-            // Старый формат — одиночный URL
-            const gallery = [{
-              id: data.photo_url,
-              url: data.photo_url,
-              fileName: data.photo_url.split('/').pop(),
-              uploadedAt: data.photo_updated_at || new Date().toISOString(),
-              timestamp: data.photo_timestamp || null,
-              isLocal: false
-            }];
-            saveUserGallery(userId, gallery);
-          }
-        }
       }
       return data || {};
     }
@@ -1104,7 +1079,6 @@
     }
 
     async function syncGalleryToStatus(userId, gallery) {
-      // Сохраняем всю галерею как JSON в БД, чтобы админ видел все фото с любого устройства
       if (gallery.length > 0) {
         const galleryData = gallery.map(g => ({
           url: g.url,
@@ -1112,7 +1086,7 @@
           uploadedAt: g.uploadedAt,
           timestamp: g.timestamp || null
         }));
-        const latest = galleryData[0]; // галерея уже отсортирована (новые в начале)
+        const latest = galleryData[0];
         await supabaseClient.from('user_statuses').upsert({
           user_id: userId,
           photo_url: JSON.stringify(galleryData),
@@ -1120,14 +1094,19 @@
           photo_timestamp: latest.timestamp || latest.uploadedAt
         }, { onConflict: 'user_id' });
       } else {
-        await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+        await supabaseClient.from('user_statuses').upsert({
+          user_id: userId,
+          photo_url: null,
+          photo_updated_at: null,
+          photo_timestamp: null
+        }, { onConflict: 'user_id' });
       }
     }
 
     async function deletePhoto(userId, fileName) {
       if (!fileName) return;
       await supabaseClient.storage.from('photos').remove([fileName]);
-      await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+      await supabaseClient.from('user_statuses').upsert({ user_id: userId, photo_url: null, photo_updated_at: null, photo_timestamp: null }, { onConflict: 'user_id' });
     }
 
     async function deleteGalleryPhoto(userId, index) {
@@ -1143,7 +1122,7 @@
       return saved;
     }
 
-    async function uploadPhotosToGallery(userId, files) {
+    async function uploadPhotosToGallery(userId, files, onTempSaved) {
       const gallery = getUserGallery(userId);
       const remaining = 6 - gallery.length;
       const selected = Array.from(files || []).slice(0, remaining);
@@ -1161,6 +1140,8 @@
       }));
       const merged = [...tempEntries, ...gallery].slice(0, 6);
       saveUserGallery(userId, merged);
+      // Мгновенно показываем временные фото
+      if (onTempSaved) onTempSaved(merged);
       for (let i = 0; i < tempEntries.length; i += 1) {
         const entry = tempEntries[i];
         const file = selected[i];
@@ -1174,6 +1155,9 @@
           target.isLocal = false;
         }
         if (entry.url.startsWith('blob:')) URL.revokeObjectURL(entry.url);
+        // Обновляем после каждой загрузки
+        saveUserGallery(userId, merged);
+        if (onTempSaved) onTempSaved(merged);
       }
       const saved = saveUserGallery(userId, merged);
       await syncGalleryToStatus(userId, saved);
@@ -1187,7 +1171,7 @@
         if (g.fileName) await supabaseClient.storage.from('photos').remove([g.fileName]).catch(() => { });
       }
       saveUserGallery(userId, []);
-      await supabaseClient.from('user_statuses').update({ photo_url: null, photo_updated_at: null, photo_timestamp: null }).eq('user_id', userId);
+      await syncGalleryToStatus(userId, []);
       // Сбрасываем статус и отвязываем устройство
       await resetUserStatus(userId);
       await clearDeviceIdForUser(userId);
@@ -1302,31 +1286,26 @@
       if (!listWrapper) return;
       const map = await loadAllStatuses();
       const green = Object.values(map).filter(s => s.status === 'green').length;
-      // Синхронизируем галереи из БД в localStorage для всех пользователей
+      // Синхронизируем галереи из БД в localStorage только если localStorage пуст
       for (const user of USERS) {
         const s = map[user.id];
-        if (s && s.photo_url) {
-          const localGallery = getUserGallery(user.id);
-          if (!localGallery.length) {
-            try {
-              const parsed = JSON.parse(s.photo_url);
-              if (Array.isArray(parsed)) {
-                saveUserGallery(user.id, parsed.map(g => ({ ...g, isLocal: false })));
-              }
-            } catch (e) {
-              // Старый формат — одиночный URL
-              saveUserGallery(user.id, [{
-                id: s.photo_url,
-                url: s.photo_url,
-                fileName: s.photo_url.split('/').pop(),
-                uploadedAt: s.photo_updated_at || new Date().toISOString(),
-                timestamp: s.photo_timestamp || null,
-                isLocal: false
-              }]);
+        const localGallery = getUserGallery(user.id);
+        if (!localGallery.length && s && s.photo_url) {
+          try {
+            const parsed = JSON.parse(s.photo_url);
+            if (Array.isArray(parsed)) {
+              saveUserGallery(user.id, parsed.map(g => ({ ...g, isLocal: false })));
             }
+          } catch (e) {
+            saveUserGallery(user.id, [{
+              id: s.photo_url,
+              url: s.photo_url,
+              fileName: s.photo_url.split('/').pop(),
+              uploadedAt: s.photo_updated_at || new Date().toISOString(),
+              timestamp: s.photo_timestamp || null,
+              isLocal: false
+            }]);
           }
-        } else if (s && !s.photo_url) {
-          saveUserGallery(user.id, []);
         }
       }
       listWrapper.innerHTML = USERS.map(user => {
@@ -1600,7 +1579,7 @@
           if (payload.new) {
             if (payload.new.device_id !== undefined && payload.new.device_id !== getOrCreateDeviceId()) { alert('Сессия завершена.'); localStorage.clear(); showLoginPage(); return; }
             if (payload.new.status !== data.status) { showUserPage(); return; }
-            if (payload.new.photo_url && payload.new.photo_url !== data.photo_url) {
+            if (payload.new.photo_url !== data.photo_url) {
               galleryPhotos = getUserGallery(userId);
               renderPhotoGallery();
             }
@@ -1625,10 +1604,13 @@
           if (!files.length) return;
           e.target.value = '';
           try {
-            const updated = await uploadPhotosToGallery(userId, files);
+            const updated = await uploadPhotosToGallery(userId, files, (merged) => {
+              galleryPhotos = merged;
+              renderPhotoGallery();
+              showToast('Фото загружено');
+            });
             galleryPhotos = updated || getUserGallery(userId);
             renderPhotoGallery();
-            showToast('Фото загружено');
           } catch (err) {
             alert('Ошибка: ' + err.message);
           }
