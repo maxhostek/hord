@@ -521,8 +521,12 @@
     .photo-empty {
       color: var(--text-secondary);
       text-align: center;
-      padding: 10px 0;
+      padding: 16px 0;
       font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60px;
     }
 
     .photo-timestamp {
@@ -764,7 +768,7 @@
       justify-content: center;
       font-size: 10px;
       line-height: 1;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       z-index: 2;
     }
 
@@ -780,7 +784,7 @@
       font-size: 0.5rem;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
       z-index: 1;
     }
 
@@ -852,18 +856,20 @@
   <script>
     // ==================== SVG ICONS ====================
     const svgIcons = {
-      arrowRight: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>',
-      chevronDown: '<svg class="svg-icon icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
-      close: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-      refresh: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 0 1-15.36 6.36L3 16"/></svg>',
-      plus: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
-      sort: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6M3 12h4M3 17h2M14 7h7M14 12h7M14 17h7"/></svg>',
-      camera: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="16" rx="3"/><circle cx="12" cy="13" r="3"/><path d="M8 5h8l2-3H6z"/></svg>',
-      trash: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-      edit: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7 21H3v-4Z"/></svg>',
-      theme: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
-      logout: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
-      photo: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
+      arrowRight: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>',
+      chevronDown: '<svg class="svg-icon icon-xs" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>',
+      close: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
+      refresh: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>',
+      plus: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>',
+      sort: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h6.5l3.5-4-3.5-4H3v2h4.17L5 14.17V12H3v6zm18-12h-6.5l-3.5 4 3.5 4H21v-2h-4.17L19 9.83V12h2V6z"/></svg>',
+      arrowUp: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>',
+      arrowDown: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>',
+      camera: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>',
+      trash: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+      edit: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+      theme: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.98-3.05 3.36-5.4 3.36-3.31 0-6-2.69-6-6 0-2.35 1.38-4.42 3.36-5.4C12.92 3.04 12.46 3 12 3z"/></svg>',
+      logout: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>',
+      photo: '<svg class="svg-icon icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>'
     };
 
     // ==================== SUPABASE ====================
@@ -1255,8 +1261,9 @@
       await renderAdminList();
     };
 
-    async function sortUsersAlphabetically() { USERS.sort((a, b) => a.name.localeCompare(b.name, 'ru')); await renderAdminList(); showToast('Список отсортирован'); }
-    async function refreshUsersAndRender() { await loadUsersFromDB(); await renderAdminList(); }
+    let sortAscending = true;
+
+    async function refreshUsersAndRender() { await loadUsersFromDB(); await renderAdminList(); sortAscending = true; }
 
     async function updateAdminRow(userId, newData, oldData) {
       const wrapper = document.querySelector(`.admin-row-wrapper[data-user-id="${userId}"]`);
@@ -1327,8 +1334,8 @@
         const user = USERS.find(u => u.id === userId);
         const wrapper = row.parentElement;
         const panel = wrapper.querySelector('.photo-panel');
-        
-        row.onclick = function (e) { 
+
+        row.onclick = function (e) {
           if (panel) {
             panel.classList.toggle('open');
             // Render admin gallery when panel opens
@@ -1346,26 +1353,26 @@
 
     async function renderAdminPhotoGallery(userId, panelEl) {
       const galleryPhotos = getUserGallery(userId).slice(0, 6);
-      
+
       const photoGalleryGrid = panelEl.querySelector('.photo-gallery-grid');
       if (!photoGalleryGrid) return;
-      
+
       if (!galleryPhotos.length) {
-        photoGalleryGrid.innerHTML = '';
+        photoGalleryGrid.innerHTML = '<div class="photo-empty">Фото нет</div>';
         return;
       }
-      
+
       photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
         <div class="photo-thumb">
           <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
           <button class="photo-delete-btn" data-index="${index}" type="button" onclick="event.stopPropagation();">${svgIcons.close}</button>
         </div>
       `).join('');
-      
+
       photoGalleryGrid.querySelectorAll('.photo-thumb img').forEach(img => {
         img.onclick = () => showPhotoModal(img.getAttribute('src'), '', '', '');
       });
-      
+
       photoGalleryGrid.querySelectorAll('.photo-delete-btn').forEach(btn => {
         btn.onclick = async (e) => {
           e.stopPropagation();
@@ -1391,7 +1398,7 @@
 
     function initPullToRefresh() {
       let pullStartY = 0, pulling = false, pullDistance = 0;
-      
+
       document.addEventListener('touchstart', e => {
         if (!body.classList.contains('admin-mode')) return;
         if (window.scrollY === 0 && document.querySelector('.admin-list-wrapper').scrollTop === 0) {
@@ -1400,7 +1407,7 @@
           pullDistance = 0;
         }
       }, { passive: true });
-      
+
       document.addEventListener('touchmove', e => {
         if (!pulling) return;
         pullDistance = e.touches[0].clientY - pullStartY;
@@ -1408,7 +1415,7 @@
           document.getElementById('ptrIndicator').classList.toggle('show', pullDistance > 60);
         }
       }, { passive: true });
-      
+
       document.addEventListener('touchend', async () => {
         if (!pulling) return;
         pulling = false;
@@ -1483,18 +1490,30 @@
 
     async function showAdminPage() {
       cleanup();
+      sortAscending = true;
       await loadUsersFromDB();
       body.className = 'admin-mode';
       applyGlobalTheme();
       getAudio('admin-enter-sound.mp3')?.play().catch(() => { });
       const map = await loadAllStatuses();
       const green = Object.values(map).filter(s => s.status === 'green').length;
-      appDiv.innerHTML = `<div class="admin-container"><div class="admin-header"><div class="admin-header-left"><h1>KEK</h1></div><div style="display:flex;gap:8px;"><button class="framed-btn" id="refreshBtn">${svgIcons.refresh}</button><button class="framed-btn" id="themeBtn">${svgIcons.theme}</button><button class="framed-btn" id="logoutBtn">${svgIcons.logout}</button></div></div><div class="admin-stats"><div class="admin-stat"><span class="dot green"></span> ${green}</div><button class="framed-btn" id="addUserBtn" style="margin-left:auto;">${svgIcons.plus}</button><button class="framed-btn" id="sortBtn">${svgIcons.sort}</button></div><div class="admin-list-wrapper">${USERS.map(user => { const s = map[user.id] || {}; const safeName = escapeJsString(user.name); return `<div class="admin-row-wrapper" data-user-id="${user.id}"><div class="admin-row"><div class="admin-info"><span class="admin-name">${safeName}</span><span class="admin-time">${s.updated_at ? formatTime(s.updated_at) : ''}</span></div><button class="kick-btn" onclick="event.stopPropagation();fullKickUser(${user.id})">${svgIcons.close}</button><div class="admin-circle${s.status === 'green' ? ' green' : ''}"></div></div><div class="photo-panel"><div class="photo-gallery-grid" id="photoGalleryGrid_${user.id}"></div></div></div>`; }).join('')}</div></div>`;
+      appDiv.innerHTML = `<div class="admin-container"><div class="admin-header"><div class="admin-header-left"><h1>KEK</h1></div><div style="display:flex;gap:8px;"><button class="framed-btn" id="refreshBtn">${svgIcons.refresh}</button><button class="framed-btn" id="themeBtn">${svgIcons.theme}</button><button class="framed-btn" id="logoutBtn">${svgIcons.logout}</button></div></div><div class="admin-stats"><div class="admin-stat"><span class="dot green"></span> ${green}</div><button class="framed-btn" id="addUserBtn" style="margin-left:auto;">${svgIcons.plus}</button><button class="framed-btn" id="sortBtn">${svgIcons.arrowDown}</button></div><div class="admin-list-wrapper">${USERS.map(user => { const s = map[user.id] || {}; const safeName = escapeJsString(user.name); return `<div class="admin-row-wrapper" data-user-id="${user.id}"><div class="admin-row"><div class="admin-info"><span class="admin-name">${safeName}</span><span class="admin-time">${s.updated_at ? formatTime(s.updated_at) : ''}</span></div><button class="kick-btn" onclick="event.stopPropagation();fullKickUser(${user.id})">${svgIcons.close}</button><div class="admin-circle${s.status === 'green' ? ' green' : ''}"></div></div><div class="photo-panel"><div class="photo-gallery-grid" id="photoGalleryGrid_${user.id}"></div></div></div>`; }).join('')}</div></div>`;
       document.getElementById('refreshBtn').onclick = fullRefreshAdmin;
       document.getElementById('themeBtn').onclick = () => { const cur = localStorage.getItem('adminTheme') || 'system'; localStorage.setItem('adminTheme', THEMES[(THEMES.indexOf(cur) + 1) % 3]); applyGlobalTheme(); };
       document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('role'); showLoginPage(); };
       document.getElementById('addUserBtn').onclick = showAddUserDialog;
-      document.getElementById('sortBtn').onclick = sortUsersAlphabetically;
+      document.getElementById('sortBtn').onclick = function () {
+        sortAscending = !sortAscending;
+        if (sortAscending) {
+          USERS.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+          showToast('Список отсортирован А-Я');
+        } else {
+          USERS.sort((a, b) => b.name.localeCompare(a.name, 'ru'));
+          showToast('Список отсортирован Я-А');
+        }
+        document.getElementById('sortBtn').innerHTML = sortAscending ? svgIcons.arrowDown : svgIcons.arrowUp;
+        renderAdminList().catch(function (e) { console.error(e); });
+      };
       bindAdminEvents();
       initPullToRefresh();
       adminChannel = supabaseClient.channel('admin-updates').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_statuses' }, payload => {
@@ -1642,7 +1661,7 @@
       window.addEventListener('beforeunload', () => clearInterval(refreshInterval));
       const originalCleanup = cleanup;
       cleanup = function () { clearInterval(refreshInterval); originalCleanup(); };
-      
+
       // Pull-to-refresh для пользователя
       const userContainer = document.getElementById('userContainer');
       if (userContainer) {
