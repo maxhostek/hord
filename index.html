@@ -144,6 +144,67 @@
       height: 1em;
       fill: currentColor;
       vertical-align: -0.125em;
+      shape-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== ИДЕАЛЬНЫЕ КРУГИ ПРИ ЛЮБОМ МАСШТАБИРОВАНИИ ===== */
+    .circle-perfect {
+      width: var(--size, 24px);
+      height: var(--size, 24px);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+    }
+
+    /* Круглые кнопки и элементы */
+    .admin-circle,
+    .user-status-circle,
+    .login-btn,
+    .photo-delete-btn,
+    .user-delete-btn,
+    .dot,
+    .kick-btn {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
+    }
+
+    /* Кнопки с большим border-radius */
+    .user-btn,
+    .camera-btn,
+    .framed-btn,
+    .btn-save,
+    .btn-cancel,
+    .dialog-btn-yes,
+    .dialog-btn-no,
+    .edit-dialog-buttons button,
+    .custom-dialog-buttons button {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+    }
+
+    /* Статус-бары и индикаторы */
+    .ptr-indicator,
+    .photo-toast,
+    .sync-indicator,
+    .user-status-container,
+    .admin-stat,
+    .admin-container h1 {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     .ptr-indicator,
@@ -365,8 +426,10 @@
     }
 
     .login-btn {
-      width: clamp(2.8rem, 10vw, 3.2rem);
-      height: clamp(2.8rem, 10vw, 3.2rem);
+      --size: clamp(2.8rem, 10vw, 3.2rem);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       background: var(--btn-bg);
       border: none;
@@ -377,6 +440,11 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
     }
 
     .feedback {
@@ -445,15 +513,66 @@
     }
 
     .dot {
-      width: clamp(8px, 2.5vw, 12px);
-      height: clamp(8px, 2.5vw, 12px);
+      --size: clamp(8px, 2.5vw, 12px);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       display: inline-block;
       flex-shrink: 0;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
     }
 
     .dot.green {
       background: var(--green);
+    }
+
+    .admin-circle {
+      --size: clamp(22px, 6vw, 28px);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      border: 2px solid #bdbdbd;
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
+    }
+
+    .admin-circle.green {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .kick-btn {
+      --size: clamp(24px, 6vw, 28px);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
     }
 
     .admin-list-wrapper {
@@ -592,11 +711,13 @@
     }
 
     .photo-delete-btn {
+      --size: clamp(22px, 6vw, 28px);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
       position: absolute;
       top: -8px;
       right: -8px;
-      width: clamp(22px, 6vw, 28px);
-      height: clamp(22px, 6vw, 28px);
       border-radius: 50%;
       background: var(--danger);
       color: #fff;
@@ -609,6 +730,11 @@
       justify-content: center;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       z-index: 2;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
     }
 
     .modal-overlay {
@@ -707,19 +833,29 @@
     }
 
     .user-status-circle {
-      width: clamp(14px, 4vw, 18px);
-      height: clamp(14px, 4vw, 18px);
+      --size: clamp(14px, 4vw, 18px);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       border: 2px solid #555;
       background: transparent;
       flex-shrink: 0;
       transition: all 0.3s;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
     }
 
     .user-status-circle.green {
       background: var(--green);
       border-color: var(--green);
       box-shadow: 0 0 12px rgba(37, 180, 126, 0.5);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     .user-buttons {
@@ -740,6 +876,10 @@
       font-size: clamp(1.1rem, 5vw, 1.4rem);
       color: #fff;
       touch-action: manipulation;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
     }
 
     .user-btn:disabled {
@@ -766,6 +906,10 @@
       justify-content: center;
       gap: 6px;
       touch-action: manipulation;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
     }
 
     .camera-btn.hidden {
@@ -876,8 +1020,10 @@
     }
 
     .user-delete-btn {
-      width: clamp(22px, 6vw, 28px);
-      height: clamp(22px, 6vw, 28px);
+      --size: clamp(22px, 6vw, 28px);
+      width: var(--size);
+      height: var(--size);
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       background: var(--danger);
       color: #fff;
@@ -888,6 +1034,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      shape-rendering: geometricPrecision;
     }
 
     .photo-empty {
@@ -1526,9 +1677,9 @@
       listWrapper.innerHTML = USERS.map(user => {
         const s = map[user.id] || {};
         const time = s.updated_at ? formatTime(s.updated_at) : '';
-        const cls = 'admin-circle' + (s.status === 'green' ? ' green' : '');
+        const cls = 'admin-circle circle-perfect' + (s.status === 'green' ? ' green' : '');
         const safeName = escapeJsString(user.name);
-        return `<div class="admin-row-wrapper" data-user-id="${user.id}"><div class="admin-row"><div class="admin-info"><span class="admin-name">${safeName}</span><span class="admin-time">${time}</span></div><button class="kick-btn" onclick="event.stopPropagation();fullKickUser(${user.id})">${svgIcons.close}</button><div class="${cls}"></div></div><div class="photo-panel"><div class="photo-gallery-grid" id="photoGalleryGrid_${user.id}"></div></div></div>`;
+        return `<div class="admin-row-wrapper" data-user-id="${user.id}"><div class="admin-row"><div class="admin-info"><span class="admin-name">${safeName}</span><span class="admin-time">${time}</span></div><button class="kick-btn circle-perfect" style="--size: clamp(24px, 6vw, 28px);" onclick="event.stopPropagation();fullKickUser(${user.id})">${svgIcons.close}</button><div class="${cls}"></div></div><div class="photo-panel"><div class="photo-gallery-grid" id="photoGalleryGrid_${user.id}"></div></div></div>`;
       }).join('');
       const statEl = document.querySelector('.admin-stat .dot.green');
       if (statEl?.nextSibling) statEl.nextSibling.textContent = ' ' + green;
@@ -1573,7 +1724,7 @@
       photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
         <div class="photo-thumb">
           <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
-          <button class="photo-delete-btn" data-index="${index}" type="button" onclick="event.stopPropagation();">${svgIcons.close}</button>
+          <button class="photo-delete-btn circle-perfect" style="--size: clamp(18px, 5vw, 24px);" data-index="${index}" type="button" onclick="event.stopPropagation();">${svgIcons.close}</button>
         </div>
       `).join('');
 
@@ -1675,7 +1826,7 @@
       cleanup();
       body.className = '';
       applyGlobalTheme();
-      appDiv.innerHTML = `<div class="login-wrapper"><div class="password-box"><input type="password" id="passwordInput" placeholder="Введите пароль" autocomplete="off"><button class="login-btn" id="loginButton">${svgIcons.arrowRight}</button></div><div class="feedback" id="feedbackMessage"></div></div>`;
+      appDiv.innerHTML = `<div class="login-wrapper"><div class="password-box"><input type="password" id="passwordInput" placeholder="Введите пароль" autocomplete="off"><button class="login-btn circle-perfect" id="loginButton">${svgIcons.arrowRight}</button></div><div class="feedback" id="feedbackMessage"></div></div>`;
       const inp = document.getElementById('passwordInput'), msg = document.getElementById('feedbackMessage');
       async function handle() {
         vibrate(10);
@@ -1747,7 +1898,7 @@
         <div style="position: absolute; top: 10px; right: 10px;"><button class="framed-btn" id="logoutBtn">${svgIcons.logout}</button></div>
         <div class="user-name">${escapeHtml(name)}</div>
         <div class="user-logo"><img src="logo.png" alt="Логотип" decoding="sync"></div>
-        <div class="user-status-container"><span class="user-status-label">Статус</span><div class="user-status-circle${isGreen ? ' green' : ''}" id="userStatusCircle"></div></div>
+        <div class="user-status-container"><span class="user-status-label">Статус</span><div class="user-status-circle circle-perfect${isGreen ? ' green' : ''}" id="userStatusCircle"></div></div>
         <div class="user-buttons"><button class="user-btn btn-green" id="greenBtn"${isGreen ? ' disabled style="opacity:0.6"' : ''}>Готов вкалывать!</button></div>
         <input type="file" id="cameraInput" accept="image/*" multiple style="display:none">
         <div class="user-photo-section" style="width:100%; max-width:380px;">
@@ -1779,7 +1930,7 @@
         photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
           <div class="photo-thumb">
             <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
-            <button class="photo-delete-btn" data-index="${index}" type="button">${svgIcons.close}</button>
+            <button class="photo-delete-btn circle-perfect" style="--size: clamp(18px, 5vw, 24px);" data-index="${index}" type="button">${svgIcons.close}</button>
           </div>
         `).join('');
         photoGalleryGrid.querySelectorAll('.photo-thumb img').forEach(img => {
