@@ -38,13 +38,6 @@
       print-color-adjust: exact;
     }
 
-    /* ===== ГЛОБАЛЬНОЕ ПРАВИЛО ДЛЯ КРУГЛЫХ ЭЛЕМЕНТОВ ===== */
-    /* Гарантирует идеальные круги при любом масштабе */
-    *, *::before, *::after {
-      -webkit-clip-path: unset;
-      clip-path: unset;
-    }
-
     html,
     body {
       height: 100%;
@@ -165,7 +158,7 @@
       width: var(--size, 24px);
       height: var(--size, 24px);
       aspect-ratio: 1 / 1;
-      clip-path: circle(50%);
+      border-radius: 50%;
       -webkit-transform: translateZ(0) scale(1.0001);
       -moz-transform: translateZ(0) scale(1.0001);
       -ms-transform: translateZ(0) scale(1.0001);
@@ -525,7 +518,7 @@
         background: var(--btn-bg);
         transform: translateZ(0) scale(1);
       }
-      
+
       .admin-header-btn:active {
         background: var(--border);
         transform: translateZ(0) scale(0.95);
@@ -575,7 +568,7 @@
         background: var(--btn-bg);
         transform: translateZ(0) scale(1);
       }
-      
+
       .stats-btn:active {
         background: var(--border);
         transform: translateZ(0) scale(0.95);
@@ -626,7 +619,7 @@
       width: var(--size);
       height: var(--size);
       aspect-ratio: 1 / 1;
-      clip-path: circle(50%);
+      border-radius: 50%;
       display: inline-block;
       flex-shrink: 0;
       -webkit-transform: translateZ(0) scale(1.0001);
@@ -650,7 +643,7 @@
       width: var(--size);
       height: var(--size);
       aspect-ratio: 1 / 1;
-      clip-path: circle(50%);
+      border-radius: 50%;
       border: 2px solid #bdbdbd;
       background: transparent;
       flex-shrink: 0;
@@ -942,7 +935,7 @@
       width: var(--size);
       height: var(--size);
       aspect-ratio: 1 / 1;
-      clip-path: circle(50%);
+      border-radius: 50%;
       border: 2px solid #555;
       background: transparent;
       flex-shrink: 0;
@@ -1201,13 +1194,21 @@
 
     /* ===== ГЛОБАЛЬНОЕ ПРАВИЛО ДЛЯ ВСЕХ КРУГОВ ===== */
     /* Гарантирует идеальные круги при любом масштабе */
-    [class*="circle"],
+    /* Для кнопок-иконок используем clip-path, для чистых кругов — border-radius */
     [class*="kick-btn"],
     [class*="delete-btn"],
     [class*="login-btn"],
-    .dot {
-      clip-path: circle(50%) !important;
-      -webkit-clip-path: circle(50%) !important;
+    .admin-header-btn,
+    .stats-btn {
+      clip-path: circle(50%);
+      -webkit-clip-path: circle(50%);
+      border-radius: 50%;
+    }
+
+    .dot,
+    .admin-circle,
+    .user-status-circle {
+      border-radius: 50%;
     }
 
     /* ===== Поддержка zoom браузера ===== */
@@ -2036,10 +2037,21 @@
     }
 
     async function loadUsersFromDB() {
-      const { data, error } = await supabaseClient.from('users').select('id, name').order('name', { ascending: true });
+      const { data, error } = await supabaseClient.from('users').select('id, name');
       if (error) { console.error(error); USERS = []; return []; }
       USERS = data.map(u => ({ id: u.id, name: u.name }));
+      // Сохраняем текущий порядок сортировки после загрузки
+      sortUsers();
       return USERS;
+    }
+
+    // Применяет сохранённое направление сортировки к массиву USERS
+    function sortUsers() {
+      if (sortAscending) {
+        USERS.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+      } else {
+        USERS.sort((a, b) => b.name.localeCompare(a.name, 'ru'));
+      }
     }
 
     async function findUserByPassword(password) {
@@ -2382,9 +2394,9 @@
       await renderAdminList();
     };
 
-    let sortAscending = true;
+    let sortAscending = localStorage.getItem('adminSortAscending') !== 'false';
 
-    async function refreshUsersAndRender() { await loadUsersFromDB(); await renderAdminList(); sortAscending = true; }
+    async function refreshUsersAndRender() { await loadUsersFromDB(); await renderAdminList(); }
 
     async function updateAdminRow(userId, newData, oldData) {
       const wrapper = document.querySelector(`.admin-row-wrapper[data-user-id="${userId}"]`);
@@ -2445,6 +2457,9 @@
       }).join('');
       const statEl = document.querySelector('.admin-stat .dot.green');
       if (statEl?.nextSibling) statEl.nextSibling.textContent = ' ' + green;
+      // Синхронизируем иконку кнопки сортировки с текущим направлением
+      const sortBtnEl = document.getElementById('sortBtn');
+      if (sortBtnEl) sortBtnEl.innerHTML = sortAscending ? svgIcons.arrowDown : svgIcons.arrowUp;
       bindAdminEvents();
     }
 
@@ -2611,7 +2626,6 @@
 
     async function showAdminPage() {
       cleanup();
-      sortAscending = true;
       await loadUsersFromDB();
       body.className = 'admin-mode';
       applyGlobalTheme();
@@ -2623,15 +2637,16 @@
       document.getElementById('themeBtn').onclick = () => { const cur = localStorage.getItem('adminTheme') || 'system'; localStorage.setItem('adminTheme', THEMES[(THEMES.indexOf(cur) + 1) % 3]); applyGlobalTheme(); };
       document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('role'); showLoginPage(); };
       document.getElementById('addUserBtn').onclick = showAddUserDialog;
+      document.getElementById('sortBtn').innerHTML = sortAscending ? svgIcons.arrowDown : svgIcons.arrowUp;
       document.getElementById('sortBtn').onclick = function () {
         sortAscending = !sortAscending;
+        localStorage.setItem('adminSortAscending', sortAscending);
         if (sortAscending) {
-          USERS.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
           showToast('Список отсортирован А-Я');
         } else {
-          USERS.sort((a, b) => b.name.localeCompare(a.name, 'ru'));
           showToast('Список отсортирован Я-А');
         }
+        sortUsers();
         document.getElementById('sortBtn').innerHTML = sortAscending ? svgIcons.arrowDown : svgIcons.arrowUp;
         renderAdminList().catch(function (e) { console.error(e); });
       };
@@ -2838,42 +2853,40 @@
     }
 
     // ===== ГЛОБАЛЬНАЯ ЗАЩИТА КРУГОВ ПРИ ЛЮБОМ МАСШТАБЕ =====
-    (function() {
-      const circleSelectors = [
-        '.circle-perfect',
-        '.login-btn',
-        '.dot',
-        '.admin-circle',
-        '.kick-btn',
-        '.photo-delete-btn',
-        '.user-status-circle',
-        '.user-delete-btn',
-        '.photo-thumb .photo-delete-btn'
-      ];
-      const circleElements = document.querySelectorAll(circleSelectors.join(','));
-      
+    (function () {
+      // Чистые круги — только border-radius (без clip-path, чтобы не было чёрного квадрата)
+      const pureCircleSelectors = ['.circle-perfect', '.dot', '.admin-circle', '.user-status-circle'];
+      // Кнопки-иконки с непрозрачным фоном — border-radius + clip-path
+      const iconBtnSelectors = ['.login-btn', '.kick-btn', '.photo-delete-btn', '.user-delete-btn', '.photo-thumb .photo-delete-btn', '.admin-header-btn', '.stats-btn'];
+
       function ensureCircleShape() {
-        circleElements.forEach(el => {
-          if (el) {
-            // Принудительно применяем clip-path для идеального круга
-            el.style.clipPath = 'circle(50%)';
-            el.style.webkitClipPath = 'circle(50%)';
-            // Аппаратное ускорение
-            el.style.transform = 'translateZ(0) scale(1.0001)';
-            el.style.backfaceVisibility = 'hidden';
-          }
+        // Чистые круги
+        document.querySelectorAll(pureCircleSelectors.join(',')).forEach(el => {
+          el.style.borderRadius = '50%';
+          el.style.clipPath = 'none';
+          el.style.webkitClipPath = 'none';
+          el.style.transform = 'translateZ(0) scale(1.0001)';
+          el.style.backfaceVisibility = 'hidden';
+        });
+        // Кнопки-иконки
+        document.querySelectorAll(iconBtnSelectors.join(',')).forEach(el => {
+          el.style.borderRadius = '50%';
+          el.style.clipPath = 'circle(50%)';
+          el.style.webkitClipPath = 'circle(50%)';
+          el.style.transform = 'translateZ(0) scale(1.0001)';
+          el.style.backfaceVisibility = 'hidden';
         });
       }
-      
+
       // Запускаем при загрузке
       ensureCircleShape();
-      
+
       // Запускаем после рендеринга каждой страницы
       const observer = new MutationObserver(() => {
         setTimeout(ensureCircleShape, 50);
       });
       observer.observe(document.body, { childList: true, subtree: true });
-      
+
       // Мониторинг изменения масштаба страницы
       let lastZoomLevel = 1;
       setInterval(() => {
@@ -2886,22 +2899,22 @@
     })();
 
     // ===== АВТОМАТИЧЕСКАЯ ПОДСТРОЙКА ИЗОБРАЖЕНИЙ ПОД РАЗМЕР ДИСПЛЕЯ =====
-    (function() {
+    (function () {
       let resizeTimer;
       const images = document.querySelectorAll('.photo-thumb img, .modal-content img, .user-logo img, .photo-preview');
-      
+
       function optimizeImages() {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const dpr = window.devicePixelRatio || 1;
-        
+
         // Определяем оптимальный масштаб для изображений
         let scale = 1;
         if (vw < 400) scale = 0.9;
         else if (vw < 768) scale = 1;
         else if (vw < 1024) scale = 1.1;
         else scale = 1.2;
-        
+
         // Применяем масштаб к изображениям
         images.forEach(img => {
           if (img.closest('.photo-thumb')) {
@@ -2910,16 +2923,16 @@
           }
         });
       }
-      
+
       // Оптимизация при загрузке
       optimizeImages();
-      
+
       // Оптимизация при изменении размера окна
       window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(optimizeImages, 150);
       });
-      
+
       // Оптимизация при изменении zoom браузера
       let lastZoom = window.devicePixelRatio;
       setInterval(() => {
