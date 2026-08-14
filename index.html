@@ -1056,6 +1056,8 @@
       zoom: 1;
       -webkit-zoom: 1;
       -moz-zoom: 1;
+      /* Исправление для отображения изображений */
+      min-height: 0;
     }
 
     .photo-thumb {
@@ -1070,9 +1072,52 @@
       /* Fallback для старых браузеров */
       height: 0;
       padding-bottom: 100%;
+      z-index: 1;
     }
 
     .photo-thumb img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      /* Корректное отображение при zoom браузера */
+      max-width: none;
+      max-height: none;
+      /* Исправление для чёрных изображений */
+      background: transparent;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1;
+    }
+
+    .photo-thumb img[src^="blob:"],
+    .photo-thumb img[src^="data:"] {
+      opacity: 1;
+    }
+
+    .photo-thumb img.loaded {
+      opacity: 1;
+    }
+
+    /* Fallback для старых браузеров без aspect-ratio */
+    @supports not (aspect-ratio: 1 / 1) {
+      .photo-thumb {
+        height: 0;
+        padding-bottom: 100%;
+      }
+    }
+
+    .photo-thumb img {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       display: block;
@@ -1221,30 +1266,9 @@
       border-radius: 50%;
     }
 
-    /* ===== Поддержка zoom браузера ===== */
-    @media (-webkit-device-pixel-ratio: 1.5),
-    (resolution: 144dpi) {
-      .photo-thumb img {
-        transform: scale(1.1);
-        transform-origin: center center;
-      }
-    }
-
-    @media (-webkit-device-pixel-ratio: 2),
-    (resolution: 192dpi) {
-      .photo-thumb img {
-        transform: scale(1.2);
-        transform-origin: center center;
-      }
-    }
-
-    @media (-webkit-device-pixel-ratio: 3),
-    (resolution: 288dpi) {
-      .photo-thumb img {
-        transform: scale(1.3);
-        transform-origin: center center;
-      }
-    }
+    /* ===== Поддержка zoom браузера =====
+    (zoom браузера корректно обрабатывается через vw/clamp и media queries по ширине,
+     поэтому отдельные scale-трансформации для изображений не нужны) */
 
     /* ===== Очень маленькие экраны (до 320px) ===== */
     @media (max-width: 320px) {
@@ -2197,14 +2221,62 @@
 
     async function uploadPhoto(userId, file) {
       let uploadFile = file;
-      try { uploadFile = await compressImage(file); } catch (e) { }
+      try {
+        uploadFile = await compressImage(file);
+        // Если сжатие вернуло Blob, убеждаемся что у него правильный MIME type
+        if (uploadFile instanceof Blob && !uploadFile.type) {
+          uploadFile = new Blob([uploadFile], { type: 'image/jpeg' });
+        }
+      } catch (e) {
+        console.error('Compression failed, using original file:', e);
+      }
       const exifDate = await extractExifDate(file);
       const photoTimestamp = exifDate || new Date().toISOString();
       const fileName = `user_${userId}_${Date.now()}.jpg`;
+      console.log('Uploading photo:', fileName, 'Size:', uploadFile.size, 'Type:', uploadFile.type);
       const { error } = await supabaseClient.storage.from('photos').upload(fileName, uploadFile, { upsert: true });
-      if (error) throw new Error(`Storage error: ${error.message}`);
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw new Error(`Storage error: ${error.message}`);
+      }
       const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
+      console.log('Photo uploaded successfully:', photoUrl);
       return { photoUrl, fileName, photoTimestamp };
+    }
+
+    async function getSignedUrl(fileName) {
+      try {
+        const { data } = await supabaseClient.storage.from('photos').createSignedUrl(fileName, 60);
+        return data?.signedUrl || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function renderGalleryWithSignedUrls(containerId) {
+      const grid = document.getElementById(containerId);
+      if (!grid) return;
+      const thumbs = grid.querySelectorAll('.photo-thumb img');
+      thumbs.forEach(async (img) => {
+        const thumb = img.closest('.photo-thumb');
+        const btn = thumb?.querySelector('.photo-delete-btn');
+        // Получаем fileName из data-атрибута или из URL
+        const url = img.src;
+        if (url && url.includes('/photos/')) {
+          const match = url.match(/\/photos\/(.+)$/);
+          if (match) {
+            const fileName = match[1];
+            const signedUrl = await getSignedUrl(fileName);
+            if (signedUrl) {
+              img.src = signedUrl;
+            }
+          }
+        }
+      });
+    }
+
+    function getUserGalleryKey(userId) {
+      return `userGallery:${userId}`;
     }
 
     function getUserGalleryKey(userId) {
@@ -2510,13 +2582,20 @@
 
       photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
         <div class="photo-thumb">
-          <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
+          <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}" onload="this.style.opacity=1" onerror="this.style.opacity=0.3">
           <button class="photo-delete-btn circle-perfect" style="--size: clamp(18px, 5vw, 24px);" data-index="${index}" type="button" onclick="event.stopPropagation();">${svgIcons.close}</button>
         </div>
       `).join('');
 
       photoGalleryGrid.querySelectorAll('.photo-thumb img').forEach(img => {
         img.onclick = () => showPhotoModal(img.getAttribute('src'), '', '', '');
+        // Автоматически помечаем загруженные изображения
+        if (img.complete && img.naturalHeight !== 0) {
+          img.classList.add('loaded');
+        } else {
+          img.addEventListener('load', () => img.classList.add('loaded'));
+          img.addEventListener('error', () => img.style.opacity = '0.3');
+        }
       });
 
       photoGalleryGrid.querySelectorAll('.photo-delete-btn').forEach(btn => {
@@ -2716,12 +2795,19 @@
         }
         photoGalleryGrid.innerHTML = galleryPhotos.map((photo, index) => `
           <div class="photo-thumb">
-            <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}">
+            <img src="${photo.url}" alt="Фото" loading="lazy" data-index="${index}" onload="this.classList.add('loaded')" onerror="this.style.opacity=0.3">
             <button class="photo-delete-btn circle-perfect" style="--size: clamp(18px, 5vw, 24px);" data-index="${index}" type="button">${svgIcons.close}</button>
           </div>
         `).join('');
         photoGalleryGrid.querySelectorAll('.photo-thumb img').forEach(img => {
           img.onclick = () => showPhotoModal(img.getAttribute('src'), name, '', '');
+          // Автоматически помечаем загруженные изображения
+          if (img.complete && img.naturalHeight !== 0) {
+            img.classList.add('loaded');
+          } else {
+            img.addEventListener('load', () => img.classList.add('loaded'));
+            img.addEventListener('error', () => img.style.opacity = '0.3');
+          }
         });
         photoGalleryGrid.querySelectorAll('.photo-delete-btn').forEach(btn => {
           btn.onclick = async (e) => {
